@@ -1,0 +1,108 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+dotenv:
+  - .env
+
+vars:
+  MIGRATIONS_DIR: ./migrations
+  DATABASE_URL: 'postgres://{{.DB_USER}}:{{.DB_PASSWORD}}@{{.DB_HOST}}:{{.DB_PORT}}/{{.DB_NAME}}?sslmode={{.DB_SSL_MODE}}&search_path={{.DB_SCHEMA}}&connect_timeout={{.DB_CONNECTION_TIMEOUT}}'
+
+tasks:
+  deps:
+    desc: Download Go module dependencies
+    cmds:
+      - go mod download
+    silent: true
+
+  tidy:
+    desc: Tidy Go modules
+    cmds:
+      - go mod tidy
+    silent: true
+
+  fmt:
+    desc: Format Go files
+    cmds:
+      - golangci-lint fmt
+    silent: true
+
+  lint:
+    desc: Run linting checks
+    cmds:
+      - golangci-lint run ./...
+    silent: true
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build the project
+    cmds:
+      - cmd: 'go build -o ./bin/exchanger.exe ./cmd'
+        platforms: [windows]
+      - cmd: 'go build -o ./bin/exchanger ./cmd'
+        platforms: [linux, darwin]
+    silent: true
+
+  run-binary:
+    desc: Run the binary
+    cmds:
+      - task: build
+      - cmd: ./bin/exchanger.exe
+        platforms: [windows]
+      - cmd: ./bin/exchanger
+        platforms: [linux, darwin]
+    silent: true
+
+  docker-up:
+    desc: Start Docker Compose services
+    cmds:
+      - docker compose up -d
+
+  docker-stop:
+    desc: Stop Docker Compose services without removing containers or volumes
+    cmds:
+      - docker compose stop
+
+  docker-delete:
+    desc: Remove Docker Compose containers and volumes
+    cmds:
+      - docker compose down -v
+
+  migrate-create:
+    desc: Create a new SQL migration
+    requires:
+      vars:
+        - NAME
+    cmds:
+      - 'migrate create -ext sql -dir {{.MIGRATIONS_DIR}} -seq {{.NAME}}'
+    silent: true
+
+  migrate-up:
+    desc: Apply database migrations
+    cmds:
+      - 'migrate -path {{.MIGRATIONS_DIR}} -database "{{.DATABASE_URL}}" up'
+
+  migrate-down:
+    desc: Roll back the last database migration
+    cmds:
+      - 'migrate -path {{.MIGRATIONS_DIR}} -database "{{.DATABASE_URL}}" down 1'
+
+  pre-commit:
+    desc: Prepare code before commit
+    cmds:
+      - task fmt
+      - task lint
+      - task test
+
+  install-tools:
+    desc: Install development tools
+    cmds:
+      - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+      - go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - go install github.com/a-h/templ/cmd/templ@latest
+

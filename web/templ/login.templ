@@ -1,0 +1,271 @@
+package templ
+
+templ LoginPage() {
+	<!doctype html>
+	<html lang="ru">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>Вход | Exchanger</title>
+			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+			<script src="https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"></script>
+			<style>
+				* {
+					box-sizing: border-box;
+				}
+
+				body {
+					margin: 0;
+					min-height: 100vh;
+					font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+					background:
+						radial-gradient(circle at top left, rgba(59, 130, 246, 0.24), transparent 32rem),
+						linear-gradient(135deg, #0f172a 0%, #111827 50%, #1e1b4b 100%);
+					color: #0f172a;
+				}
+
+				.login-page {
+					display: grid;
+					min-height: 100vh;
+					place-items: center;
+					padding: 1.5rem;
+				}
+
+				.login-card {
+					width: min(100%, 26rem);
+					padding: 2rem;
+					border: 1px solid rgba(255, 255, 255, 0.18);
+					border-radius: 1.25rem;
+					background: rgba(255, 255, 255, 0.94);
+					box-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.35);
+					backdrop-filter: blur(16px);
+				}
+
+				.login-card h1 {
+					margin: 0;
+					font-size: 1.875rem;
+					line-height: 1.2;
+					letter-spacing: -0.03em;
+				}
+
+				.login-card p {
+					margin: 0.5rem 0 0;
+					color: #64748b;
+				}
+
+				.login-form {
+					display: grid;
+					gap: 1rem;
+					margin-top: 1.5rem;
+				}
+
+				.field {
+					display: grid;
+					gap: 0.4rem;
+				}
+
+				.field label {
+					font-size: 0.875rem;
+					font-weight: 600;
+					color: #334155;
+				}
+
+				.field input {
+					width: 100%;
+					padding: 0.8rem 0.9rem;
+					border: 1px solid #cbd5e1;
+					border-radius: 0.8rem;
+					background: #fff;
+					color: #0f172a;
+					font: inherit;
+					outline: none;
+					transition: border-color 160ms ease, box-shadow 160ms ease;
+				}
+
+				.field input:focus {
+					border-color: #2563eb;
+					box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+				}
+
+				.login-button {
+					width: 100%;
+					margin-top: 0.25rem;
+					padding: 0.85rem 1rem;
+					border: 0;
+					border-radius: 0.8rem;
+					background: linear-gradient(135deg, #2563eb, #4f46e5);
+					color: #fff;
+					cursor: pointer;
+					font: inherit;
+					font-weight: 700;
+					box-shadow: 0 0.75rem 1.5rem rgba(37, 99, 235, 0.28);
+					transition: transform 160ms ease, box-shadow 160ms ease;
+				}
+
+				.login-button:hover {
+					transform: translateY(-1px);
+					box-shadow: 0 1rem 1.75rem rgba(37, 99, 235, 0.34);
+				}
+
+				.login-button:active {
+					transform: translateY(0);
+				}
+
+				.login-error {
+					display: none;
+					position: fixed;
+					right: 1.5rem;
+					bottom: 1.5rem;
+					z-index: 20;
+					width: min(28rem, calc(100vw - 3rem));
+					padding: 0.85rem 2.75rem 0.85rem 0.9rem;
+					border: 1px solid #fecdd3;
+					border-radius: 0.9rem;
+					background: #fff1f2;
+					color: #9f1239;
+					box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.22);
+					opacity: 0;
+					transform: translateY(0.75rem);
+					transition: opacity 200ms ease, transform 200ms ease;
+				}
+
+				.login-error.is-visible {
+					display: block;
+					opacity: 1;
+					transform: translateY(0);
+				}
+
+				.login-error.is-leaving {
+					opacity: 0;
+					transform: translateY(0.75rem);
+				}
+
+				.login-error strong {
+					display: block;
+					margin-bottom: 0.5rem;
+					font-size: 0.95rem;
+				}
+
+				.login-error pre {
+					margin: 0;
+					max-height: 12rem;
+					overflow: auto;
+					white-space: pre-wrap;
+					word-break: break-word;
+					font-size: 0.82rem;
+					line-height: 1.45;
+				}
+
+				.login-error__close {
+					position: absolute;
+					top: 0.55rem;
+					right: 0.55rem;
+					display: grid;
+					width: 1.75rem;
+					height: 1.75rem;
+					place-items: center;
+					border: 0;
+					border-radius: 999px;
+					background: rgba(159, 18, 57, 0.08);
+					color: #9f1239;
+					cursor: pointer;
+					font-size: 1.1rem;
+					line-height: 1;
+				}
+
+				.login-error__close:hover {
+					background: rgba(159, 18, 57, 0.16);
+				}
+			</style>
+		</head>
+		<body>
+			<main class="login-page">
+				<section class="login-card">
+					<h1>Вход</h1>
+					<p>Войдите в панель управления обменником.</p>
+					<form class="login-form" method="post" action="/v1/auth/login" hx-post="/v1/auth/login" hx-ext="json-enc" hx-swap="none">
+						<div class="field">
+							<label for="name">Логин</label>
+							<input id="name" name="name" type="text" autocomplete="username" placeholder="admin" required/>
+						</div>
+						<div class="field">
+							<label for="password">Пароль</label>
+							<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Введите пароль" required/>
+						</div>
+						<button class="login-button" type="submit">Войти</button>
+					</form>
+				</section>
+				<div id="login-error" class="login-error" role="alert" aria-live="polite"></div>
+			</main>
+			<script>
+				document.addEventListener("DOMContentLoaded", function () {
+					const errorBox = document.getElementById("login-error");
+					let hideTimer;
+
+					function hideError() {
+						clearTimeout(hideTimer);
+						if (!errorBox.classList.contains("is-visible")) {
+							return;
+						}
+						errorBox.classList.add("is-leaving");
+						setTimeout(function () {
+							errorBox.classList.remove("is-visible", "is-leaving");
+							errorBox.replaceChildren();
+						}, 200);
+					}
+
+					function showError(payload) {
+						clearTimeout(hideTimer);
+
+						const title = document.createElement("strong");
+						title.textContent = "Опа, ошибка";
+
+						const closeButton = document.createElement("button");
+						closeButton.className = "login-error__close";
+						closeButton.type = "button";
+						closeButton.setAttribute("aria-label", "Закрыть ошибку");
+						closeButton.innerHTML = "&times;";
+
+						const body = document.createElement("pre");
+						body.textContent = typeof payload === "string"
+							? payload
+							: JSON.stringify(payload, null, 2);
+
+						errorBox.replaceChildren(title, closeButton, body);
+						errorBox.classList.remove("is-leaving");
+						errorBox.classList.add("is-visible");
+						hideTimer = setTimeout(hideError, 5000);
+					}
+
+					document.body.addEventListener("htmx:beforeRequest", function () {
+						hideError();
+					});
+
+					errorBox.addEventListener("click", function (event) {
+						if (event.target.closest(".login-error__close")) {
+							hideError();
+						}
+					});
+
+					document.body.addEventListener("htmx:responseError", function (event) {
+						const xhr = event.detail.xhr;
+						let payload = {
+							status: xhr.status,
+							statusText: xhr.statusText,
+						};
+
+						if (xhr.responseText) {
+							try {
+								payload = JSON.parse(xhr.responseText);
+							} catch {
+								payload = xhr.responseText;
+							}
+						}
+
+						showError(payload);
+					});
+				});
+			</script>
+		</body>
+	</html>
+}

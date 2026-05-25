@@ -1,0 +1,1969 @@
+package templ
+
+templ DashboardPage() {
+	<!doctype html>
+	<html lang="ru">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>Dashboard | Exchanger</title>
+			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+			<style>
+				* {
+					box-sizing: border-box;
+				}
+
+				body {
+					margin: 0;
+					min-height: 100vh;
+					font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+					background:
+						radial-gradient(circle at top left, rgba(59, 130, 246, 0.2), transparent 32rem),
+						linear-gradient(135deg, #0f172a 0%, #111827 48%, #1e1b4b 100%);
+					color: #0f172a;
+				}
+
+				.dashboard {
+					width: min(1180px, 100%);
+					margin: 0 auto;
+					padding: 2rem;
+				}
+
+				.dashboard-header {
+					display: flex;
+					align-items: flex-end;
+					justify-content: space-between;
+					gap: 1rem;
+					margin-bottom: 1.5rem;
+					color: #fff;
+				}
+
+				.dashboard-header h1 {
+					margin: 0;
+					font-size: clamp(2rem, 4vw, 3.25rem);
+					line-height: 1;
+					letter-spacing: -0.06em;
+				}
+
+				.dashboard-header p {
+					margin: 0.6rem 0 0;
+					max-width: 38rem;
+					color: #cbd5e1;
+				}
+
+				.user-menu {
+					position: relative;
+				}
+
+				.user-pill {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.5rem;
+					padding: 0.55rem 0.9rem;
+					border: 1px solid rgba(255, 255, 255, 0.18);
+					border-radius: 999px;
+					background: rgba(255, 255, 255, 0.1);
+					color: #dbeafe;
+					cursor: pointer;
+					font: inherit;
+					white-space: nowrap;
+				}
+
+				.user-pill:hover {
+					background: rgba(255, 255, 255, 0.16);
+				}
+
+				.user-menu-panel {
+					position: absolute;
+					top: calc(100% + 0.5rem);
+					right: 0;
+					z-index: 30;
+					display: grid;
+					gap: 0.75rem;
+					min-width: 12rem;
+					padding: 0.9rem;
+					border: 1px solid rgba(255, 255, 255, 0.18);
+					border-radius: 0.9rem;
+					background: rgba(15, 23, 42, 0.96);
+					box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.35);
+				}
+
+				.user-menu-panel[hidden] {
+					display: none;
+				}
+
+				.user-menu-role {
+					color: #94a3b8;
+					font-size: 0.82rem;
+					text-transform: capitalize;
+				}
+
+				.logout-button {
+					width: 100%;
+					padding: 0.7rem 0.85rem;
+					border: 1px solid rgba(248, 113, 113, 0.35);
+					border-radius: 0.75rem;
+					background: rgba(127, 29, 29, 0.35);
+					color: #fecaca;
+					cursor: pointer;
+					font: inherit;
+					font-weight: 700;
+				}
+
+				.logout-button:hover {
+					background: rgba(153, 27, 27, 0.55);
+				}
+
+				.dashboard-grid {
+					display: grid;
+					grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.35fr);
+					gap: 1rem;
+					align-items: start;
+				}
+
+				.panel {
+					border: 1px solid rgba(255, 255, 255, 0.2);
+					border-radius: 1.25rem;
+					background: rgba(255, 255, 255, 0.94);
+					box-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.28);
+					overflow: hidden;
+					backdrop-filter: blur(16px);
+				}
+
+				.panel-header {
+					padding: 1.25rem 1.25rem 0;
+				}
+
+				.panel-header-row {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 1rem;
+				}
+
+				.panel-header-actions {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.65rem;
+				}
+
+				.panel-header h2 {
+					margin: 0;
+					font-size: 1.15rem;
+					letter-spacing: -0.03em;
+				}
+
+				.panel-header p {
+					margin: 0.35rem 0 0;
+					color: #64748b;
+					font-size: 0.92rem;
+				}
+
+				.empty-panel-space {
+					min-height: 15rem;
+					padding: 1.25rem;
+				}
+
+				.action-list {
+					display: grid;
+					gap: 0.65rem;
+					max-height: 18rem;
+					overflow-y: auto;
+					padding: 1.25rem;
+				}
+
+				.action-list:empty {
+					display: none;
+				}
+
+				.action-item {
+					display: grid;
+					gap: 0.25rem;
+					padding: 0.75rem 0.85rem;
+					border: 1px solid #e2e8f0;
+					border-radius: 0.85rem;
+					background: #f8fafc;
+				}
+
+				.action-item__title {
+					margin: 0;
+					font-size: 0.92rem;
+					font-weight: 700;
+					color: #0f172a;
+				}
+
+				.action-item__meta {
+					margin: 0;
+					font-size: 0.78rem;
+					color: #64748b;
+					word-break: break-word;
+				}
+
+				.action-item__status {
+					font-weight: 700;
+				}
+
+				.action-item__status.is-success {
+					color: #047857;
+				}
+
+				.action-item__status.is-error {
+					color: #be123c;
+				}
+
+				.currency-list {
+					display: grid;
+					gap: 0.75rem;
+					max-height: 22rem;
+					overflow-y: auto;
+					padding: 1.25rem;
+				}
+
+				.currency-list:empty {
+					display: none;
+				}
+
+				.currency-card {
+					display: flex;
+					align-items: center;
+					gap: 0.8rem;
+					padding: 0.9rem;
+					border: 1px solid #e2e8f0;
+					border-radius: 1rem;
+					background: linear-gradient(135deg, #fff, #f8fafc);
+				}
+
+				.currency-card__body {
+					min-width: 0;
+					flex: 1;
+				}
+
+				.currency-icon {
+					display: grid;
+					width: 2.8rem;
+					height: 2.8rem;
+					place-items: center;
+					border-radius: 0.9rem;
+					background: linear-gradient(135deg, #2563eb, #4f46e5);
+					color: #fff;
+					font-weight: 800;
+					box-shadow: 0 0.75rem 1.25rem rgba(37, 99, 235, 0.22);
+				}
+
+				.currency-card h3 {
+					margin: 0;
+					font-size: 1rem;
+				}
+
+				.currency-card p {
+					margin: 0.2rem 0 0;
+					color: #64748b;
+					font-size: 0.88rem;
+				}
+
+				.currency-actions {
+					display: inline-flex;
+					gap: 0.4rem;
+					margin-left: auto;
+				}
+
+				.icon-button {
+					display: inline-grid;
+					width: 2.1rem;
+					height: 2.1rem;
+					place-items: center;
+					border: 1px solid #cbd5e1;
+					border-radius: 0.7rem;
+					background: #fff;
+					color: #334155;
+					cursor: pointer;
+					font: inherit;
+					font-weight: 800;
+					transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
+				}
+
+				.icon-button[hidden],
+				.button[hidden] {
+					display: none !important;
+				}
+
+				.icon-button:hover {
+					border-color: #2563eb;
+					color: #1d4ed8;
+					transform: translateY(-1px);
+				}
+
+				.icon-button.is-danger:hover {
+					border-color: #fda4af;
+					color: #be123c;
+				}
+
+				.add-button {
+					width: 2.4rem;
+					height: 2.4rem;
+					border-color: #bfdbfe;
+					background: #eff6ff;
+					color: #1d4ed8;
+					font-size: 1.4rem;
+					line-height: 1;
+				}
+
+				.currency-load-marker {
+					min-height: 1px;
+				}
+
+				.panel-state {
+					padding: 1.25rem;
+					color: #64748b;
+					font-size: 0.92rem;
+				}
+
+				.panel-state.is-error {
+					color: #9f1239;
+				}
+
+				.rates-panel {
+					grid-row: span 2;
+				}
+
+				.rates-content {
+					padding: 0 1.25rem 1.25rem;
+					max-height: 24rem;
+					overflow-y: auto;
+				}
+
+				.rates-table {
+					width: 100%;
+					border-collapse: collapse;
+					margin-top: 0.75rem;
+				}
+
+				.rates-table th,
+				.rates-table td {
+					padding: 0.9rem 1.25rem;
+					border-top: 1px solid #e2e8f0;
+					text-align: left;
+					vertical-align: top;
+				}
+
+				.rates-table th {
+					color: #64748b;
+					font-size: 0.78rem;
+					font-weight: 700;
+					letter-spacing: 0.04em;
+					text-transform: uppercase;
+				}
+
+				.rates-table td {
+					font-size: 0.94rem;
+				}
+
+				.rate-pair {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.45rem;
+					font-weight: 800;
+				}
+
+				.rate-chip {
+					display: inline-flex;
+					padding: 0.25rem 0.5rem;
+					border-radius: 999px;
+					background: #eff6ff;
+					color: #1d4ed8;
+					font-size: 0.78rem;
+					font-weight: 700;
+				}
+
+				.muted {
+					display: block;
+					margin-top: 0.2rem;
+					color: #64748b;
+					font-size: 0.82rem;
+				}
+
+				.activity-list {
+					display: grid;
+					gap: 0.75rem;
+					padding: 1.25rem;
+				}
+
+				.activity-item {
+					display: grid;
+					grid-template-columns: auto 1fr;
+					gap: 0.75rem;
+				}
+
+				.activity-marker {
+					width: 0.75rem;
+					height: 0.75rem;
+					margin-top: 0.3rem;
+					border-radius: 999px;
+					background: #2563eb;
+					box-shadow: 0 0 0 0.35rem #dbeafe;
+				}
+
+				.activity-item strong {
+					display: block;
+					font-size: 0.92rem;
+				}
+
+				.activity-item span {
+					display: block;
+					margin-top: 0.15rem;
+					color: #64748b;
+					font-size: 0.84rem;
+				}
+
+				.note {
+					margin: 0;
+					padding: 1rem 1.25rem 1.25rem;
+					color: #475569;
+					font-size: 0.88rem;
+				}
+
+				.modal-backdrop {
+					position: fixed;
+					inset: 0;
+					z-index: 40;
+					display: grid;
+					place-items: center;
+					padding: 1.5rem;
+					background: rgba(15, 23, 42, 0.62);
+				}
+
+				.modal-backdrop[hidden] {
+					display: none;
+				}
+
+				.modal {
+					width: min(100%, 28rem);
+					border-radius: 1.25rem;
+					background: #fff;
+					box-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.35);
+					overflow: hidden;
+				}
+
+				.modal-header {
+					padding: 1.25rem 1.25rem 0;
+				}
+
+				.modal-header h2 {
+					margin: 0;
+					font-size: 1.25rem;
+					letter-spacing: -0.03em;
+				}
+
+				.modal-header p {
+					margin: 0.45rem 0 0;
+					color: #64748b;
+					font-size: 0.92rem;
+				}
+
+				.modal-form,
+				.modal-content {
+					display: grid;
+					gap: 1rem;
+					padding: 1.25rem;
+				}
+
+				.form-field {
+					display: grid;
+					gap: 0.4rem;
+				}
+
+				.form-field label {
+					color: #334155;
+					font-size: 0.86rem;
+					font-weight: 700;
+				}
+
+				.form-field input {
+					width: 100%;
+					padding: 0.75rem 0.85rem;
+					border: 1px solid #cbd5e1;
+					border-radius: 0.8rem;
+					font: inherit;
+					outline: none;
+				}
+
+				.form-field input:focus {
+					border-color: #2563eb;
+					box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+				}
+
+				.form-field input[readonly] {
+					background: #f8fafc;
+					color: #64748b;
+				}
+
+				.modal-actions {
+					display: flex;
+					justify-content: flex-end;
+					gap: 0.65rem;
+				}
+
+				.button {
+					padding: 0.75rem 1rem;
+					border: 1px solid #cbd5e1;
+					border-radius: 0.8rem;
+					background: #fff;
+					color: #334155;
+					cursor: pointer;
+					font: inherit;
+					font-weight: 800;
+				}
+
+				.button-primary {
+					border-color: #2563eb;
+					background: #2563eb;
+					color: #fff;
+				}
+
+				.button-danger {
+					border-color: #e11d48;
+					background: #e11d48;
+					color: #fff;
+				}
+
+				@media (max-width: 860px) {
+					.dashboard {
+						padding: 1rem;
+					}
+
+					.dashboard-header {
+						display: grid;
+					}
+
+					.dashboard-grid {
+						grid-template-columns: 1fr;
+					}
+
+					.rates-panel {
+						grid-row: auto;
+					}
+				}
+			</style>
+		</head>
+		<body>
+			<main class="dashboard">
+				<header class="dashboard-header">
+					<div>
+						<h1>Exchanger</h1>
+						<p>Рабочий стол оператора: валюты, курсы покупки и продажи, последние действия.</p>
+					</div>
+					<div class="user-menu" id="user-menu">
+						<button id="user-menu-trigger" class="user-pill" type="button">
+							<span id="user-name">...</span>
+						</button>
+						<div id="user-menu-panel" class="user-menu-panel" hidden>
+							<span id="user-role" class="user-menu-role"></span>
+							<button
+								class="logout-button"
+								type="button"
+								hx-post="/v1/auth/logout"
+								hx-swap="none"
+							>
+								Выйти
+							</button>
+						</div>
+					</div>
+				</header>
+				<section class="dashboard-grid">
+					<article class="panel">
+						<div class="panel-header">
+							<div class="panel-header-row">
+								<h2>Доступные валюты</h2>
+								<button id="currency-add" class="icon-button add-button" type="button" aria-label="Добавить валюту" hidden>+</button>
+							</div>
+						</div>
+						<div id="currency-list" class="currency-list" aria-live="polite"></div>
+						<div id="currency-state" class="panel-state">Загрузка валют...</div>
+					</article>
+					<article class="panel rates-panel">
+						<div class="panel-header">
+							<div class="panel-header-row">
+								<h2>Курсы покупки и продажи</h2>
+								<div class="panel-header-actions">
+									<button id="rate-add" class="icon-button add-button" type="button" aria-label="Добавить курс" hidden>+</button>
+									<button id="rate-browse" class="button" type="button" hidden>Курсы на дату</button>
+									<button id="rate-report" class="button" type="button" hidden>Отчёт</button>
+								</div>
+							</div>
+							<p>Актуальные курсы на сегодня</p>
+						</div>
+						<div id="rates-content" class="rates-content"></div>
+						<div id="rates-state" class="panel-state">Загрузка курсов...</div>
+					</article>
+					<article class="panel" id="exchange-panel" hidden>
+						<div class="panel-header">
+							<h2>Обмен валют</h2>
+							<p>Операция по текущему курсу</p>
+						</div>
+						<form id="exchange-form" class="modal-form" style="padding-top: 0;">
+							<div class="form-field">
+								<label for="exchange-pair">Пара</label>
+								<select id="exchange-pair" required></select>
+							</div>
+							<div class="form-field">
+								<label for="exchange-side">Операция</label>
+								<select id="exchange-side" required>
+									<option value="buy">Продажа</option>
+									<option value="sell">Покупка</option>
+								</select>
+								<p id="exchange-side-hint" class="muted" style="margin: 0;"></p>
+							</div>
+							<div class="form-field">
+								<label id="exchange-amount-label" for="exchange-amount">Сумма</label>
+								<input id="exchange-amount" type="text" required/>
+							</div>
+							<button class="button button-primary" type="submit">Обменять</button>
+						</form>
+						<div id="exchange-state" class="panel-state" hidden></div>
+					</article>
+					<article class="panel">
+						<div class="panel-header">
+							<h2>Мои действия</h2>
+						</div>
+						<div id="action-list" class="action-list" aria-live="polite"></div>
+						<div id="action-state" class="panel-state">Загрузка действий...</div>
+					</article>
+				</section>
+			</main>
+			<div id="currency-form-modal" class="modal-backdrop" hidden>
+				<section class="modal" role="dialog" aria-modal="true" aria-labelledby="currency-form-title">
+					<div class="modal-header">
+						<h2 id="currency-form-title">Добавить валюту</h2>
+						<p id="currency-form-description">Заполните данные валюты.</p>
+					</div>
+					<form id="currency-form" class="modal-form">
+						<div class="form-field">
+							<label for="currency-code">Code</label>
+							<input id="currency-code" name="code" type="text" maxlength="3" required/>
+						</div>
+						<div class="form-field">
+							<label for="currency-name">Name</label>
+							<input id="currency-name" name="name" type="text" required/>
+						</div>
+						<div class="form-field">
+							<label for="currency-symbol">Symbol</label>
+							<input id="currency-symbol" name="symbol" type="text" maxlength="8" required/>
+						</div>
+						<div class="form-field">
+							<label for="currency-minor-unit">Minor unit</label>
+							<input id="currency-minor-unit" name="minor_unit" type="number" min="0" max="4" required/>
+						</div>
+						<div class="modal-actions">
+							<button class="button" type="button" data-currency-form-cancel>Отмена</button>
+							<button class="button button-primary" type="submit">Сохранить</button>
+						</div>
+					</form>
+				</section>
+			</div>
+			<div id="currency-delete-modal" class="modal-backdrop" hidden>
+				<section class="modal" role="dialog" aria-modal="true" aria-labelledby="currency-delete-title">
+					<div class="modal-header">
+						<h2 id="currency-delete-title">Удалить валюту?</h2>
+						<p id="currency-delete-description"></p>
+					</div>
+					<div class="modal-content">
+						<div class="modal-actions">
+							<button class="button" type="button" data-currency-delete-cancel>Отмена</button>
+							<button class="button button-danger" type="button" data-currency-delete-confirm>Удалить</button>
+						</div>
+					</div>
+				</section>
+			</div>
+			<div id="rate-form-modal" class="modal-backdrop" hidden>
+				<section class="modal" role="dialog" aria-modal="true" aria-labelledby="rate-form-title">
+					<div class="modal-header">
+						<h2 id="rate-form-title">Изменить курс</h2>
+						<p id="rate-form-description"></p>
+					</div>
+					<form id="rate-form" class="modal-form">
+						<div id="rate-pair-fields" hidden>
+							<div class="form-field">
+								<label for="rate-base-code">Base code</label>
+								<input id="rate-base-code" name="base_currency_code" type="text" maxlength="3"/>
+							</div>
+							<div class="form-field">
+								<label for="rate-quote-code">Quote code</label>
+								<input id="rate-quote-code" name="quote_currency_code" type="text" maxlength="3"/>
+							</div>
+						</div>
+						<div class="form-field">
+							<label for="rate-buy">Buy rate</label>
+							<input id="rate-buy" name="buy_rate" type="text" required/>
+						</div>
+						<div class="form-field">
+							<label for="rate-sell">Sell rate</label>
+							<input id="rate-sell" name="sell_rate" type="text" required/>
+						</div>
+						<div class="form-field">
+							<label for="rate-buy-active">Buy active</label>
+							<input id="rate-buy-active" name="is_buy_active" type="checkbox"/>
+						</div>
+						<div class="form-field">
+							<label for="rate-sell-active">Sell active</label>
+							<input id="rate-sell-active" name="is_sell_active" type="checkbox"/>
+						</div>
+						<div class="modal-actions">
+							<button class="button" type="button" data-rate-form-cancel>Отмена</button>
+							<button class="button button-primary" type="submit">Сохранить</button>
+						</div>
+					</form>
+				</section>
+			</div>
+			<div id="rate-history-modal" class="modal-backdrop" hidden>
+				<section class="modal" role="dialog" aria-modal="true" aria-labelledby="rate-history-title">
+					<div class="modal-header">
+						<h2 id="rate-history-title">История курса</h2>
+						<p id="rate-history-description"></p>
+					</div>
+					<div id="rate-history-list" class="action-list"></div>
+					<div id="rate-history-state" class="panel-state">Загрузка истории...</div>
+				</section>
+			</div>
+			<div id="rate-report-modal" class="modal-backdrop" hidden>
+				<section class="modal" role="dialog" aria-modal="true" aria-labelledby="rate-report-title">
+					<div class="modal-header">
+						<h2 id="rate-report-title">Отчёт по обмену</h2>
+						<p>Операции обмена за период</p>
+					</div>
+					<form id="rate-report-form" class="modal-form">
+						<div class="form-field">
+							<label for="rate-report-from">From</label>
+							<input id="rate-report-from" name="from" type="date" required/>
+						</div>
+						<div class="form-field">
+							<label for="rate-report-to">To</label>
+							<input id="rate-report-to" name="to" type="date" required/>
+						</div>
+						<div class="form-field">
+							<label for="rate-report-base">Base code</label>
+							<input id="rate-report-base" name="base" type="text" maxlength="3"/>
+						</div>
+						<div class="form-field">
+							<label for="rate-report-quote">Quote code</label>
+							<input id="rate-report-quote" name="quote" type="text" maxlength="3"/>
+						</div>
+						<div class="modal-actions">
+							<button class="button" type="button" data-rate-report-cancel>Закрыть</button>
+							<button class="button button-primary" type="submit">Показать</button>
+						</div>
+					</form>
+					<div id="rate-report-list" class="action-list"></div>
+					<div id="rate-report-state" class="panel-state"></div>
+				</section>
+			</div>
+			<div id="rate-browse-modal" class="modal-backdrop" hidden>
+				<section class="modal" role="dialog" aria-modal="true" aria-labelledby="rate-browse-title">
+					<div class="modal-header">
+						<h2 id="rate-browse-title">Курсы на дату</h2>
+						<p>История курсов за выбранный период</p>
+					</div>
+					<form id="rate-browse-form" class="modal-form">
+						<div class="form-field">
+							<label for="rate-browse-from">From</label>
+							<input id="rate-browse-from" name="from" type="date" required/>
+						</div>
+						<div class="form-field">
+							<label for="rate-browse-to">To</label>
+							<input id="rate-browse-to" name="to" type="date" required/>
+						</div>
+						<div class="form-field">
+							<label for="rate-browse-base">Base code</label>
+							<input id="rate-browse-base" name="base" type="text" maxlength="3"/>
+						</div>
+						<div class="form-field">
+							<label for="rate-browse-quote">Quote code</label>
+							<input id="rate-browse-quote" name="quote" type="text" maxlength="3"/>
+						</div>
+						<div class="modal-actions">
+							<button class="button" type="button" data-rate-browse-cancel>Закрыть</button>
+							<button class="button button-primary" type="submit">Показать</button>
+						</div>
+					</form>
+					<div id="rate-browse-list" class="action-list"></div>
+					<div id="rate-browse-state" class="panel-state"></div>
+				</section>
+			</div>
+			<script>
+				document.addEventListener("DOMContentLoaded", function () {
+					const list = document.getElementById("currency-list");
+					const state = document.getElementById("currency-state");
+					const actionList = document.getElementById("action-list");
+					const actionState = document.getElementById("action-state");
+					const ratesContent = document.getElementById("rates-content");
+					const ratesState = document.getElementById("rates-state");
+					const rateReportButton = document.getElementById("rate-report");
+					const rateBrowseButton = document.getElementById("rate-browse");
+					const rateAddButton = document.getElementById("rate-add");
+					const ratePairFields = document.getElementById("rate-pair-fields");
+					const rateBaseCodeInput = document.getElementById("rate-base-code");
+					const rateQuoteCodeInput = document.getElementById("rate-quote-code");
+					const rateFormTitle = document.getElementById("rate-form-title");
+					const rateFormModal = document.getElementById("rate-form-modal");
+					const rateHistoryModal = document.getElementById("rate-history-modal");
+					const rateReportModal = document.getElementById("rate-report-modal");
+					const rateForm = document.getElementById("rate-form");
+					const rateFormDescription = document.getElementById("rate-form-description");
+					const rateBuyInput = document.getElementById("rate-buy");
+					const rateSellInput = document.getElementById("rate-sell");
+					const rateBuyActiveInput = document.getElementById("rate-buy-active");
+					const rateSellActiveInput = document.getElementById("rate-sell-active");
+					const rateHistoryList = document.getElementById("rate-history-list");
+					const rateHistoryState = document.getElementById("rate-history-state");
+					const rateHistoryDescription = document.getElementById("rate-history-description");
+					const rateReportForm = document.getElementById("rate-report-form");
+					const rateReportList = document.getElementById("rate-report-list");
+					const rateReportState = document.getElementById("rate-report-state");
+					const rateReportFromInput = document.getElementById("rate-report-from");
+					const rateReportToInput = document.getElementById("rate-report-to");
+					const rateReportBaseInput = document.getElementById("rate-report-base");
+					const rateReportQuoteInput = document.getElementById("rate-report-quote");
+					const rateBrowseModal = document.getElementById("rate-browse-modal");
+					const rateBrowseForm = document.getElementById("rate-browse-form");
+					const rateBrowseList = document.getElementById("rate-browse-list");
+					const rateBrowseState = document.getElementById("rate-browse-state");
+					const rateBrowseFromInput = document.getElementById("rate-browse-from");
+					const rateBrowseToInput = document.getElementById("rate-browse-to");
+					const rateBrowseBaseInput = document.getElementById("rate-browse-base");
+					const rateBrowseQuoteInput = document.getElementById("rate-browse-quote");
+					const exchangePanel = document.getElementById("exchange-panel");
+					const exchangeForm = document.getElementById("exchange-form");
+					const exchangePairSelect = document.getElementById("exchange-pair");
+					const exchangeSideSelect = document.getElementById("exchange-side");
+					const exchangeSideHint = document.getElementById("exchange-side-hint");
+					const exchangeAmountLabel = document.getElementById("exchange-amount-label");
+					const exchangeAmountInput = document.getElementById("exchange-amount");
+					const exchangeState = document.getElementById("exchange-state");
+					const userMenu = document.getElementById("user-menu");
+					const userMenuTrigger = document.getElementById("user-menu-trigger");
+					const userMenuPanel = document.getElementById("user-menu-panel");
+					const userName = document.getElementById("user-name");
+					const userRole = document.getElementById("user-role");
+					const addButton = document.getElementById("currency-add");
+					const formModal = document.getElementById("currency-form-modal");
+					const deleteModal = document.getElementById("currency-delete-modal");
+					const form = document.getElementById("currency-form");
+					const formTitle = document.getElementById("currency-form-title");
+					const formDescription = document.getElementById("currency-form-description");
+					const deleteDescription = document.getElementById("currency-delete-description");
+					const codeInput = document.getElementById("currency-code");
+					const nameInput = document.getElementById("currency-name");
+					const symbolInput = document.getElementById("currency-symbol");
+					const minorUnitInput = document.getElementById("currency-minor-unit");
+					const loadMarker = document.createElement("div");
+					loadMarker.className = "currency-load-marker";
+					const actionLoadMarker = document.createElement("div");
+					actionLoadMarker.className = "currency-load-marker";
+					const limit = 4;
+					const actionLimit = 10;
+					const currencies = new Map();
+					let offset = 0;
+					let actionOffset = 0;
+					let loading = false;
+					let actionLoading = false;
+					let hasMore = true;
+					let actionHasMore = true;
+					let formMode = "create";
+					let selectedCurrencyCode = "";
+					let isAdmin = false;
+					let selectedRateID = "";
+					let rateFormMode = "edit";
+					const rates = new Map();
+
+					function applyRoleUI() {
+						addButton.hidden = !isAdmin;
+						rateAddButton.hidden = !isAdmin;
+						rateReportButton.hidden = !isAdmin;
+						rateBrowseButton.hidden = isAdmin;
+						exchangePanel.hidden = isAdmin;
+					}
+
+					function setState(message, isError) {
+						state.textContent = message;
+						state.classList.toggle("is-error", Boolean(isError));
+						state.hidden = message === "";
+					}
+
+					function setRatesState(message, isError) {
+						ratesState.textContent = message;
+						ratesState.classList.toggle("is-error", Boolean(isError));
+						ratesState.hidden = message === "";
+					}
+
+					function renderRateRow(rate) {
+						const row = document.createElement("tr");
+
+						const pairCell = document.createElement("td");
+						const pair = document.createElement("div");
+						pair.className = "rate-pair";
+						pair.innerHTML = `<span class="rate-chip">${rate.base_currency_code}</span><span>/</span><span class="rate-chip">${rate.quote_currency_code}</span>`;
+						const updated = document.createElement("span");
+						updated.className = "muted";
+						updated.textContent = `обновлено ${new Date(rate.updated_at).toLocaleString("ru-RU")}`;
+						pairCell.append(pair, updated);
+
+						const buyCell = document.createElement("td");
+						buyCell.textContent = rate.is_buy_active ? rate.buy_rate : "—";
+
+						const sellCell = document.createElement("td");
+						sellCell.textContent = rate.is_sell_active ? rate.sell_rate : "—";
+
+						row.append(pairCell, buyCell, sellCell);
+
+						if (isAdmin) {
+							const actionsCell = document.createElement("td");
+							const editButton = document.createElement("button");
+							editButton.className = "icon-button";
+							editButton.type = "button";
+							editButton.textContent = "✎";
+							editButton.title = "Изменить";
+							editButton.addEventListener("click", function () {
+								openRateFormModal(rate.id);
+							});
+
+							const historyButton = document.createElement("button");
+							historyButton.className = "icon-button";
+							historyButton.type = "button";
+							historyButton.textContent = "⏱";
+							historyButton.title = "История";
+							historyButton.addEventListener("click", function () {
+								openRateHistoryModal(rate.id);
+							});
+
+							actionsCell.append(editButton, historyButton);
+							row.append(actionsCell);
+						}
+
+						return row;
+					}
+
+					function renderRatesTable(items) {
+						const table = document.createElement("table");
+						table.className = "rates-table";
+
+						const head = document.createElement("thead");
+						const headRow = document.createElement("tr");
+						const headers = ["Пара", "Покупка", "Продажа"];
+						if (isAdmin) {
+							headers.push("");
+						}
+						for (const title of headers) {
+							const th = document.createElement("th");
+							th.textContent = title;
+							headRow.append(th);
+						}
+						head.append(headRow);
+
+						const body = document.createElement("tbody");
+						for (const rate of items) {
+							body.append(renderRateRow(rate));
+						}
+
+						table.append(head, body);
+						return table;
+					}
+
+					async function loadRates() {
+						setRatesState("Загрузка курсов...", false);
+
+						try {
+							const loadedRates = await requestJSON("/v1/exchange-rate");
+							if (!loadedRates) {
+								return;
+							}
+
+							rates.clear();
+							for (const rate of loadedRates) {
+								rates.set(rate.id, rate);
+							}
+
+							ratesContent.replaceChildren(renderRatesTable(loadedRates));
+
+							if (loadedRates.length === 0) {
+								setRatesState("Курсы не найдены.", false);
+								return;
+							}
+
+							setRatesState("", false);
+							populateExchangePairs();
+						} catch (error) {
+							setRatesState(error.message || "Не удалось загрузить курсы.", true);
+						}
+					}
+
+					function findRateByPair(baseCode, quoteCode) {
+						for (const rate of rates.values()) {
+							if (rate.base_currency_code === baseCode && rate.quote_currency_code === quoteCode) {
+								return rate;
+							}
+						}
+
+						return null;
+					}
+
+					function translateExchangeError(message) {
+						switch (message) {
+						case "exchange rate side is not active":
+							return "Эта операция сейчас недоступна: соответствующий курс отключён.";
+						case "exchange rate not found":
+							return "Курс для выбранной пары не найден.";
+						default:
+							return message;
+						}
+					}
+
+					function updateExchangeForm() {
+						if (isAdmin) {
+							return;
+						}
+
+						const pairValue = exchangePairSelect.value;
+						if (!pairValue) {
+							exchangeSideHint.textContent = "";
+							return;
+						}
+
+						const [baseCode, quoteCode] = pairValue.split(":");
+						const rate = findRateByPair(baseCode, quoteCode);
+						exchangeAmountLabel.textContent = `Сумма в ${baseCode}`;
+
+						const sellOption = exchangeSideSelect.querySelector('option[value="buy"]');
+						const buyOption = exchangeSideSelect.querySelector('option[value="sell"]');
+
+						if (!rate) {
+							exchangeSideHint.textContent = "Курс для пары не найден.";
+							sellOption.disabled = true;
+							buyOption.disabled = true;
+							return;
+						}
+
+						sellOption.textContent = `Продажа ${baseCode} → ${quoteCode} (курс ${rate.is_sell_active ? rate.sell_rate : "отключён"})`;
+						buyOption.textContent = `Покупка ${baseCode} → ${quoteCode} (курс ${rate.is_buy_active ? rate.buy_rate : "отключён"})`;
+						sellOption.disabled = !rate.is_sell_active;
+						buyOption.disabled = !rate.is_buy_active;
+
+						if (exchangeSideSelect.selectedOptions[0]?.disabled) {
+							const firstEnabled = exchangeSideSelect.querySelector("option:not(:disabled)");
+							if (firstEnabled) {
+								exchangeSideSelect.value = firstEnabled.value;
+							}
+						}
+
+						const side = exchangeSideSelect.value;
+						if (side === "buy") {
+							exchangeSideHint.textContent = `Клиент получает ${baseCode}, отдаёт ${quoteCode}. Используется курс продажи.`;
+						} else {
+							exchangeSideHint.textContent = `Клиент отдаёт ${baseCode}, получает ${quoteCode}. Используется курс покупки.`;
+						}
+					}
+
+					function populateExchangePairs() {
+						if (isAdmin) {
+							return;
+						}
+
+						exchangePairSelect.replaceChildren();
+						for (const rate of rates.values()) {
+							if (!rate.is_buy_active && !rate.is_sell_active) {
+								continue;
+							}
+
+							const option = document.createElement("option");
+							option.value = `${rate.base_currency_code}:${rate.quote_currency_code}`;
+							option.textContent = `${rate.base_currency_code}/${rate.quote_currency_code}`;
+							exchangePairSelect.append(option);
+						}
+
+						updateExchangeForm();
+					}
+
+					function setExchangeState(message, isError) {
+						exchangeState.textContent = message;
+						exchangeState.classList.toggle("is-error", Boolean(isError));
+						exchangeState.hidden = message === "";
+					}
+
+					function openRateFormModal(rateID) {
+						if (!isAdmin) {
+							return;
+						}
+
+						const rate = rates.get(rateID);
+						if (!rate) {
+							return;
+						}
+
+						rateFormMode = "edit";
+						selectedRateID = rateID;
+						rateFormTitle.textContent = "Изменить курс";
+						ratePairFields.hidden = true;
+						rateBaseCodeInput.required = false;
+						rateQuoteCodeInput.required = false;
+						rateFormDescription.textContent = `${rate.base_currency_code}/${rate.quote_currency_code}`;
+						rateBuyInput.value = rate.buy_rate;
+						rateSellInput.value = rate.sell_rate;
+						rateBuyActiveInput.checked = rate.is_buy_active;
+						rateSellActiveInput.checked = rate.is_sell_active;
+						rateFormModal.hidden = false;
+					}
+
+					function openRateCreateModal() {
+						if (!isAdmin) {
+							return;
+						}
+
+						rateFormMode = "create";
+						selectedRateID = "";
+						rateForm.reset();
+						rateFormTitle.textContent = "Добавить курс";
+						rateFormDescription.textContent = "Укажите валютную пару и курсы покупки/продажи.";
+						ratePairFields.hidden = false;
+						rateBaseCodeInput.required = true;
+						rateQuoteCodeInput.required = true;
+						rateBuyActiveInput.checked = true;
+						rateSellActiveInput.checked = true;
+						rateQuoteCodeInput.value = "BYN";
+						rateFormModal.hidden = false;
+						rateBaseCodeInput.focus();
+					}
+
+					function closeRateFormModal() {
+						rateFormModal.hidden = true;
+						selectedRateID = "";
+						rateFormDescription.style.color = "";
+					}
+
+					function renderHistoryItem(item) {
+						const article = document.createElement("article");
+						article.className = "action-item";
+						article.innerHTML = `<p class="action-item__title">${item.base_currency_code}/${item.quote_currency_code}</p><p class="action-item__meta">buy ${item.buy_rate} · sell ${item.sell_rate} · ${new Date(item.valid_from).toLocaleString("ru-RU")} — ${new Date(item.valid_to).toLocaleString("ru-RU")}</p>`;
+						return article;
+					}
+
+					function renderExchangeItem(item) {
+						const article = document.createElement("article");
+						article.className = "action-item";
+						const sideLabel = item.side === "buy" ? "продажа" : "покупка";
+						article.innerHTML = `<p class="action-item__title">${item.base_currency_code}/${item.quote_currency_code} · ${sideLabel}</p><p class="action-item__meta">${item.operator_name} · ${item.amount} @ ${item.rate} = ${item.result_amount} · ${new Date(item.created_at).toLocaleString("ru-RU")}</p>`;
+						return article;
+					}
+
+					async function openRateHistoryModal(rateID) {
+						if (!isAdmin) {
+							return;
+						}
+
+						const rate = rates.get(rateID);
+						if (!rate) {
+							return;
+						}
+
+						selectedRateID = rateID;
+						rateHistoryDescription.textContent = `${rate.base_currency_code}/${rate.quote_currency_code}`;
+						rateHistoryModal.hidden = false;
+						rateHistoryState.hidden = false;
+						rateHistoryState.textContent = "Загрузка истории...";
+						rateHistoryList.replaceChildren();
+
+						try {
+							const history = await requestJSON(`/v1/exchange-rate/${rateID}/history?limit=20&offset=0`);
+							if (!history) {
+								return;
+							}
+
+							for (const item of history) {
+								rateHistoryList.append(renderHistoryItem(item));
+							}
+
+							rateHistoryState.hidden = history.length > 0;
+							if (history.length === 0) {
+								rateHistoryState.textContent = "История пока пуста.";
+							}
+						} catch (error) {
+							rateHistoryState.hidden = false;
+							rateHistoryState.textContent = error.message || "Не удалось загрузить историю.";
+							rateHistoryState.classList.add("is-error");
+						}
+					}
+
+					function closeRateHistoryModal() {
+						rateHistoryModal.hidden = true;
+						selectedRateID = "";
+					}
+
+					function openRateReportModal() {
+						if (!isAdmin) {
+							return;
+						}
+
+						const today = new Date();
+						const iso = today.toISOString().slice(0, 10);
+						rateReportFromInput.value = iso;
+						rateReportToInput.value = iso;
+						rateReportBaseInput.value = "";
+						rateReportQuoteInput.value = "";
+						rateReportList.replaceChildren();
+						rateReportState.textContent = "";
+						rateReportState.hidden = true;
+						rateReportModal.hidden = false;
+					}
+
+					function closeRateReportModal() {
+						rateReportModal.hidden = true;
+					}
+
+					function openRateBrowseModal() {
+						if (isAdmin) {
+							return;
+						}
+
+						const iso = new Date().toISOString().slice(0, 10);
+						rateBrowseFromInput.value = iso;
+						rateBrowseToInput.value = iso;
+						rateBrowseBaseInput.value = "";
+						rateBrowseQuoteInput.value = "";
+						rateBrowseList.replaceChildren();
+						rateBrowseState.textContent = "";
+						rateBrowseState.hidden = true;
+						rateBrowseModal.hidden = false;
+					}
+
+					function closeRateBrowseModal() {
+						rateBrowseModal.hidden = true;
+					}
+
+					async function loadRateBrowse(event) {
+						event.preventDefault();
+						if (isAdmin) {
+							return;
+						}
+
+						const params = new URLSearchParams({
+							from: rateBrowseFromInput.value,
+							to: rateBrowseToInput.value,
+							limit: "50",
+							offset: "0",
+						});
+
+						if (rateBrowseBaseInput.value.trim()) {
+							params.set("base", rateBrowseBaseInput.value.trim().toUpperCase());
+						}
+						if (rateBrowseQuoteInput.value.trim()) {
+							params.set("quote", rateBrowseQuoteInput.value.trim().toUpperCase());
+						}
+
+						rateBrowseState.hidden = false;
+						rateBrowseState.textContent = "Загрузка курсов...";
+						rateBrowseState.classList.remove("is-error");
+
+						try {
+							const items = await requestJSON(`/v1/exchange-rate/rates?${params.toString()}`);
+							if (!items) {
+								return;
+							}
+
+							rateBrowseList.replaceChildren();
+							for (const item of items) {
+								rateBrowseList.append(renderHistoryItem(item));
+							}
+
+							if (items.length === 0) {
+								rateBrowseState.textContent = "Записей за выбранный период нет.";
+								return;
+							}
+
+							rateBrowseState.hidden = true;
+						} catch (error) {
+							rateBrowseState.textContent = error.message || "Не удалось загрузить курсы.";
+							rateBrowseState.classList.add("is-error");
+						}
+					}
+
+					async function loadRateReport(event) {
+						event.preventDefault();
+						if (!isAdmin) {
+							return;
+						}
+
+						const params = new URLSearchParams({
+							from: rateReportFromInput.value,
+							to: rateReportToInput.value,
+							limit: "50",
+							offset: "0",
+						});
+
+						if (rateReportBaseInput.value.trim()) {
+							params.set("base", rateReportBaseInput.value.trim().toUpperCase());
+						}
+						if (rateReportQuoteInput.value.trim()) {
+							params.set("quote", rateReportQuoteInput.value.trim().toUpperCase());
+						}
+
+						rateReportState.hidden = false;
+						rateReportState.textContent = "Загрузка отчёта...";
+						rateReportState.classList.remove("is-error");
+
+						try {
+							const report = await requestJSON(`/v1/exchange-rate/report?${params.toString()}`);
+							if (!report) {
+								return;
+							}
+
+							rateReportList.replaceChildren();
+							for (const item of report) {
+								rateReportList.append(renderExchangeItem(item));
+							}
+
+							if (report.length === 0) {
+								rateReportState.textContent = "Операций за выбранный период нет.";
+								return;
+							}
+
+							rateReportState.hidden = true;
+						} catch (error) {
+							rateReportState.textContent = error.message || "Не удалось загрузить отчёт.";
+							rateReportState.classList.add("is-error");
+						}
+					}
+
+					function setActionState(message, isError) {
+						actionState.textContent = message;
+						actionState.classList.toggle("is-error", Boolean(isError));
+						actionState.hidden = message === "";
+					}
+
+					function parseActionBody(request) {
+						if (!request.body) {
+							return null;
+						}
+
+						if (typeof request.body === "object") {
+							return request.body;
+						}
+
+						try {
+							return JSON.parse(request.body);
+						} catch {
+							return null;
+						}
+					}
+
+					function describeAction(action) {
+						const request = action.request;
+						const route = request.path;
+						const method = request.method;
+
+						if (route === "/v1/currency" && method === "GET") {
+							return "Просмотр списка валют";
+						}
+						if (route === "/v1/currency/:code" && method === "GET") {
+							return "Просмотр валюты";
+						}
+						if (route === "/v1/currency" && method === "POST") {
+							return "Добавление валюты";
+						}
+						if (route === "/v1/currency/:code" && method === "PUT") {
+							return "Изменение валюты";
+						}
+						if (route === "/v1/currency/:code" && method === "DELETE") {
+							return "Удаление валюты";
+						}
+						if (route === "/v1/account/me" && method === "GET") {
+							return "Просмотр профиля";
+						}
+						if (route === "/v1/auth/login" && method === "POST") {
+							return "Вход в систему";
+						}
+						if (route === "/v1/auth/logout" && method === "POST") {
+							return "Выход из системы";
+						}
+						if (route === "/v1/exchange-rate" && method === "GET") {
+							return "Просмотр курсов";
+						}
+						if (route === "/v1/exchange-rate" && method === "POST") {
+							return "Добавление курса";
+						}
+						if (route === "/v1/exchange-rate/:id" && method === "PUT") {
+							return "Изменение курса";
+						}
+						if (route === "/v1/exchange-rate/:id/history" && method === "GET") {
+							return "Просмотр истории курса";
+						}
+						if (route === "/v1/exchange-rate/report" && method === "GET") {
+							return "Отчёт по обмену";
+						}
+						if (route === "/v1/exchange-rate/rates" && method === "GET") {
+							return "Просмотр курсов на дату";
+						}
+						if (route === "/v1/exchange" && method === "POST") {
+							const body = parseActionBody(request);
+							if (body?.side === "buy") {
+								return "Продажа валюты";
+							}
+							if (body?.side === "sell") {
+								return "Покупка валюты";
+							}
+							return "Обмен валют";
+						}
+
+						return `${method} ${route}`;
+					}
+
+					function formatActionDetails(action) {
+						const request = action.request;
+						const parts = [];
+
+						if (request.query) {
+							parts.push(`query: ${request.query}`);
+						}
+						if (request.body) {
+							parts.push(`body: ${JSON.stringify(request.body)}`);
+						}
+
+						return parts.join(" · ");
+					}
+
+					function renderAction(action) {
+						const item = document.createElement("article");
+						item.className = "action-item";
+
+						const title = document.createElement("p");
+						title.className = "action-item__title";
+						title.textContent = describeAction(action);
+
+						const meta = document.createElement("p");
+						meta.className = "action-item__meta";
+						const statusClass = action.request.status >= 400 ? "is-error" : "is-success";
+						const details = formatActionDetails(action);
+						meta.innerHTML = `<span class="action-item__status ${statusClass}">${action.request.status}</span> · ${new Date(action.created_at).toLocaleString("ru-RU")}${details ? ` · ${details}` : ""}`;
+
+						item.append(title, meta);
+						return item;
+					}
+
+					async function loadActions() {
+						if (actionLoading || !actionHasMore) {
+							return;
+						}
+
+						actionLoading = true;
+						setActionState(actionOffset === 0 ? "Загрузка действий..." : "Загружаем еще...", false);
+
+						try {
+							const actions = await requestJSON(`/v1/account/actions?limit=${actionLimit}&offset=${actionOffset}`);
+							if (!actions) {
+								return;
+							}
+
+							for (const action of actions) {
+								actionList.insertBefore(renderAction(action), actionLoadMarker);
+							}
+
+							actionOffset += actions.length;
+							actionHasMore = actions.length === actionLimit;
+							actionLoadMarker.hidden = !actionHasMore;
+
+							if (actionOffset === 0) {
+								setActionState("Действий за текущую сессию пока нет.", false);
+								return;
+							}
+
+							setActionState("", false);
+						} catch (error) {
+							setActionState(error.message || "Не удалось загрузить действия.", true);
+						} finally {
+							actionLoading = false;
+						}
+
+						if (actionHasMore && shouldLoadNextActionPage()) {
+							loadActions();
+						}
+					}
+
+					async function reloadActions() {
+						actionList.querySelectorAll(".action-item").forEach(function (item) {
+							item.remove();
+						});
+						actionOffset = 0;
+						actionHasMore = true;
+						actionLoadMarker.hidden = false;
+						await loadActions();
+					}
+
+					function shouldLoadNextActionPage() {
+						const threshold = 48;
+						return actionList.scrollTop + actionList.clientHeight >= actionList.scrollHeight - threshold;
+					}
+
+					function renderCurrency(currency) {
+						const card = document.createElement("article");
+						card.className = "currency-card";
+						card.dataset.currencyCode = currency.code;
+
+						const icon = document.createElement("div");
+						icon.className = "currency-icon";
+						icon.textContent = currency.code;
+
+						const body = document.createElement("div");
+						body.className = "currency-card__body";
+						const title = document.createElement("h3");
+						title.textContent = currency.name;
+
+						const meta = document.createElement("p");
+						meta.textContent = `${currency.symbol} · minor unit ${currency.minor_unit}`;
+
+						const actions = document.createElement("div");
+						actions.className = "currency-actions";
+
+						const editButton = document.createElement("button");
+						editButton.className = "icon-button";
+						editButton.type = "button";
+						editButton.textContent = "✎";
+						editButton.title = "Редактировать";
+						editButton.setAttribute("aria-label", `Редактировать ${currency.code}`);
+						editButton.addEventListener("click", function () {
+							openFormModal("edit", currency.code);
+						});
+
+						const deleteButton = document.createElement("button");
+						deleteButton.className = "icon-button is-danger";
+						deleteButton.type = "button";
+						deleteButton.textContent = "🗑";
+						deleteButton.title = "Удалить";
+						deleteButton.setAttribute("aria-label", `Удалить ${currency.code}`);
+						deleteButton.addEventListener("click", function () {
+							openDeleteModal(currency.code);
+						});
+
+						body.append(title, meta);
+						card.append(icon, body);
+						if (isAdmin) {
+							actions.append(editButton, deleteButton);
+							card.append(actions);
+						}
+
+						return card;
+					}
+
+					async function requestJSON(url, options) {
+						const response = await fetch(url, {
+							headers: {
+								Accept: "application/json",
+								"Content-Type": "application/json",
+							},
+							...options,
+						});
+
+						if (response.status === 401) {
+							window.location.href = "/login";
+							return null;
+						}
+
+						if (!response.ok) {
+							let message = `Ошибка: ${response.status}`;
+							try {
+								const payload = await response.json();
+								if (payload.error) {
+									message = payload.error;
+								}
+							} catch {
+								// ignore invalid error payload
+							}
+							throw new Error(message);
+						}
+
+						if (response.status === 204) {
+							return null;
+						}
+
+						return response.json();
+					}
+
+					async function loadAccount() {
+						const account = await requestJSON("/v1/account/me");
+						if (!account) {
+							return;
+						}
+
+						userName.textContent = account.name;
+						userRole.textContent = account.role;
+						isAdmin = account.role === "admin";
+						applyRoleUI();
+					}
+
+					async function reloadCurrencies() {
+						currencies.clear();
+						list.querySelectorAll(".currency-card").forEach(function (card) {
+							card.remove();
+						});
+						offset = 0;
+						hasMore = true;
+						loadMarker.hidden = false;
+						await loadCurrencies();
+					}
+
+					function openFormModal(mode, code) {
+						if (!isAdmin) {
+							return;
+						}
+
+						formMode = mode;
+						selectedCurrencyCode = code || "";
+						form.reset();
+						codeInput.readOnly = mode === "edit";
+						formDescription.style.color = "";
+
+						if (mode === "edit") {
+							const currency = currencies.get(code);
+							if (!currency) {
+								return;
+							}
+
+							formTitle.textContent = "Изменить валюту";
+							formDescription.textContent = `Изменение данных ${currency.code}.`;
+							codeInput.value = currency.code;
+							nameInput.value = currency.name;
+							symbolInput.value = currency.symbol;
+							minorUnitInput.value = currency.minor_unit;
+						} else {
+							formTitle.textContent = "Добавить валюту";
+							formDescription.textContent = "Заполните данные новой валюты.";
+							minorUnitInput.value = "2";
+						}
+
+						formModal.hidden = false;
+						if (mode === "edit") {
+							nameInput.focus();
+						} else {
+							codeInput.focus();
+						}
+					}
+
+					function closeFormModal() {
+						formModal.hidden = true;
+						selectedCurrencyCode = "";
+					}
+
+					function openDeleteModal(code) {
+						if (!isAdmin) {
+							return;
+						}
+
+						const currency = currencies.get(code);
+						if (!currency) {
+							return;
+						}
+
+						selectedCurrencyCode = code;
+						deleteDescription.style.color = "";
+						deleteDescription.textContent = `Подтвердите удаление ${currency.code} — ${currency.name}.`;
+						deleteModal.hidden = false;
+					}
+
+					function closeDeleteModal() {
+						deleteModal.hidden = true;
+						selectedCurrencyCode = "";
+					}
+
+					function shouldLoadNextPage() {
+						const threshold = 48;
+						return list.scrollTop + list.clientHeight >= list.scrollHeight - threshold;
+					}
+
+					async function loadCurrencies() {
+						if (loading || !hasMore) {
+							return;
+						}
+
+						loading = true;
+						setState(offset === 0 ? "Загрузка валют..." : "Загружаем еще...", false);
+
+						try {
+							const response = await fetch(`/v1/currency?limit=${limit}&offset=${offset}`, {
+								headers: {
+									Accept: "application/json",
+								},
+							});
+
+							if (response.status === 401) {
+								window.location.href = "/login";
+								return;
+							}
+
+							if (!response.ok) {
+								throw new Error(`Не удалось загрузить валюты: ${response.status}`);
+							}
+
+							const loadedCurrencies = await response.json();
+
+							for (const currency of loadedCurrencies) {
+								currencies.set(currency.code, currency);
+								list.insertBefore(renderCurrency(currency), loadMarker);
+							}
+
+							offset += loadedCurrencies.length;
+							hasMore = loadedCurrencies.length === limit;
+							loadMarker.hidden = !hasMore;
+
+							if (offset === 0) {
+								setState("Валюты не найдены.", false);
+								return;
+							}
+
+							setState("", false);
+						} catch (error) {
+							setState(error.message || "Не удалось загрузить валюты.", true);
+						} finally {
+							loading = false;
+						}
+
+						if (hasMore && shouldLoadNextPage()) {
+							loadCurrencies();
+						}
+					}
+
+					list.append(loadMarker);
+
+					actionList.append(actionLoadMarker);
+
+					const actionObserver = new IntersectionObserver(function (entries) {
+						if (entries.some(function (entry) { return entry.isIntersecting; })) {
+							loadActions();
+						}
+					}, {
+						root: actionList,
+						rootMargin: "0px 0px 48px 0px",
+					});
+
+					actionObserver.observe(actionLoadMarker);
+					actionList.addEventListener("scroll", function () {
+						if (shouldLoadNextActionPage()) {
+							loadActions();
+						}
+					});
+
+					const observer = new IntersectionObserver(function (entries) {
+						if (entries.some(function (entry) { return entry.isIntersecting; })) {
+							loadCurrencies();
+						}
+					}, {
+						root: list,
+						rootMargin: "0px 0px 48px 0px",
+					});
+
+					observer.observe(loadMarker);
+					list.addEventListener("scroll", function () {
+						if (shouldLoadNextPage()) {
+							loadCurrencies();
+						}
+					});
+					userMenuTrigger.addEventListener("click", function (event) {
+						event.stopPropagation();
+						userMenuPanel.hidden = !userMenuPanel.hidden;
+					});
+					document.addEventListener("click", function (event) {
+						if (!userMenu.contains(event.target)) {
+							userMenuPanel.hidden = true;
+						}
+					});
+					rateAddButton.addEventListener("click", openRateCreateModal);
+					rateReportButton.addEventListener("click", openRateReportModal);
+					rateBrowseButton.addEventListener("click", openRateBrowseModal);
+					rateForm.addEventListener("submit", async function (event) {
+						event.preventDefault();
+						if (!isAdmin) {
+							return;
+						}
+
+						const payload = {
+							buy_rate: rateBuyInput.value.trim(),
+							sell_rate: rateSellInput.value.trim(),
+							is_buy_active: rateBuyActiveInput.checked,
+							is_sell_active: rateSellActiveInput.checked,
+						};
+
+						try {
+							if (rateFormMode === "create") {
+								await requestJSON("/v1/exchange-rate", {
+									method: "POST",
+									body: JSON.stringify({
+										base_currency_code: rateBaseCodeInput.value.trim().toUpperCase(),
+										quote_currency_code: rateQuoteCodeInput.value.trim().toUpperCase(),
+										...payload,
+									}),
+								});
+							} else {
+								if (!selectedRateID) {
+									return;
+								}
+
+								await requestJSON(`/v1/exchange-rate/${selectedRateID}`, {
+									method: "PUT",
+									body: JSON.stringify(payload),
+								});
+							}
+
+							closeRateFormModal();
+							await loadRates();
+							await reloadActions();
+						} catch (error) {
+							rateFormDescription.textContent = error.message;
+							rateFormDescription.style.color = "#9f1239";
+						}
+					});
+					rateFormModal.addEventListener("click", function (event) {
+						if (event.target === rateFormModal || event.target.closest("[data-rate-form-cancel]")) {
+							closeRateFormModal();
+						}
+					});
+					rateHistoryModal.addEventListener("click", function (event) {
+						if (event.target === rateHistoryModal) {
+							closeRateHistoryModal();
+						}
+					});
+					rateReportForm.addEventListener("submit", loadRateReport);
+					rateReportModal.addEventListener("click", function (event) {
+						if (event.target === rateReportModal || event.target.closest("[data-rate-report-cancel]")) {
+							closeRateReportModal();
+						}
+					});
+					rateBrowseForm.addEventListener("submit", loadRateBrowse);
+					rateBrowseModal.addEventListener("click", function (event) {
+						if (event.target === rateBrowseModal || event.target.closest("[data-rate-browse-cancel]")) {
+							closeRateBrowseModal();
+						}
+					});
+					exchangeForm.addEventListener("submit", async function (event) {
+						event.preventDefault();
+						if (isAdmin) {
+							return;
+						}
+
+						const pairValue = exchangePairSelect.value;
+						if (!pairValue) {
+							setExchangeState("Выберите валютную пару.", true);
+							return;
+						}
+
+						const [baseCode, quoteCode] = pairValue.split(":");
+						setExchangeState("Выполняем обмен...", false);
+
+						try {
+							const result = await requestJSON("/v1/exchange", {
+								method: "POST",
+								body: JSON.stringify({
+									base_currency_code: baseCode,
+									quote_currency_code: quoteCode,
+									side: exchangeSideSelect.value,
+									amount: exchangeAmountInput.value.trim(),
+								}),
+							});
+
+							if (!result) {
+								return;
+							}
+
+							setExchangeState(
+								`Готово: ${result.amount} ${result.base_currency_code} → ${result.result_amount} ${result.quote_currency_code} (курс ${result.rate})`,
+								false,
+							);
+							exchangeAmountInput.value = "";
+							await reloadActions();
+						} catch (error) {
+							setExchangeState(translateExchangeError(error.message) || "Не удалось выполнить обмен.", true);
+						}
+					});
+					exchangePairSelect.addEventListener("change", updateExchangeForm);
+					exchangeSideSelect.addEventListener("change", updateExchangeForm);
+					addButton.addEventListener("click", function () {
+						openFormModal("create");
+					});
+					form.addEventListener("submit", async function (event) {
+						event.preventDefault();
+
+						if (!isAdmin) {
+							return;
+						}
+
+						const body = {
+							code: codeInput.value.trim().toUpperCase(),
+							name: nameInput.value.trim(),
+							symbol: symbolInput.value.trim(),
+							minor_unit: Number(minorUnitInput.value),
+						};
+
+						try {
+							if (formMode === "edit") {
+								await requestJSON(`/v1/currency/${selectedCurrencyCode}`, {
+									method: "PUT",
+									body: JSON.stringify({
+										name: body.name,
+										symbol: body.symbol,
+										minor_unit: body.minor_unit,
+									}),
+								});
+							} else {
+								await requestJSON("/v1/currency", {
+									method: "POST",
+									body: JSON.stringify(body),
+								});
+							}
+
+							closeFormModal();
+							await reloadCurrencies();
+							await reloadActions();
+						} catch (error) {
+							formDescription.textContent = error.message;
+							formDescription.style.color = "#9f1239";
+						}
+					});
+					formModal.addEventListener("click", function (event) {
+						if (event.target === formModal || event.target.closest("[data-currency-form-cancel]")) {
+							closeFormModal();
+						}
+					});
+					deleteModal.addEventListener("click", function (event) {
+						if (event.target === deleteModal || event.target.closest("[data-currency-delete-cancel]")) {
+							closeDeleteModal();
+							return;
+						}
+
+						if (event.target.closest("[data-currency-delete-confirm]")) {
+							if (!isAdmin) {
+								return;
+							}
+
+							requestJSON(`/v1/currency/${selectedCurrencyCode}`, {
+								method: "DELETE",
+							}).then(async function () {
+								closeDeleteModal();
+								await reloadCurrencies();
+								await reloadActions();
+							}).catch(function (error) {
+								deleteDescription.textContent = error.message;
+								deleteDescription.style.color = "#9f1239";
+							});
+						}
+					});
+					document.addEventListener("keydown", function (event) {
+						if (event.key === "Escape") {
+							closeFormModal();
+							closeDeleteModal();
+							closeRateFormModal();
+							closeRateHistoryModal();
+							closeRateReportModal();
+						}
+					});
+					loadAccount().then(async function () {
+						await loadRates();
+						await Promise.all([loadCurrencies(), loadActions()]);
+					});
+				});
+			</script>
+		</body>
+	</html>
+}

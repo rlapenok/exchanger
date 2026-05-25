@@ -1,0 +1,6 @@
+.git
+.cursor
+.env
+bin
+**/*_templ.go.tmp
+*.exe
